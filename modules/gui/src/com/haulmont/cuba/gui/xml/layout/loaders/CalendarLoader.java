@@ -237,6 +237,7 @@ public class CalendarLoader extends AbstractComponentLoader<Calendar> {
             String dayValue = dayName.attributeValue("value");
             if (StringUtils.isNotEmpty(dayValue)) {
                 if (dayOfWeek != null) {
+                    dayValue = loadResourceString(dayValue);
                     dayNamesMap.put(dayOfWeek, dayValue);
                 }
             }
@@ -262,6 +263,7 @@ public class CalendarLoader extends AbstractComponentLoader<Calendar> {
             String monthValue = monthName.attributeValue("value");
             if (StringUtils.isNotEmpty(monthValue)) {
                 if (monthOfYear != null) {
+                    monthValue = loadResourceString(monthValue);
                     monthNamesMap.put(monthOfYear, monthValue);
                 }
             }

@@ -1045,7 +1045,7 @@
 
     <xs:complexType name="day">
         <xs:attribute name="dayOfWeek" type="daysOfWeek"/>
-        <xs:attribute name="value" type="xs:string"/>
+        <xs:attribute name="value" type="resourceString"/>
     </xs:complexType>
 
     <xs:complexType name="months">
@@ -1058,7 +1058,7 @@
 
     <xs:complexType name="month">
         <xs:attribute name="month" type="monthOfYear"/>
-        <xs:attribute name="value" type="xs:string"/>
+        <xs:attribute name="value" type="resourceString"/>
     </xs:complexType>
 
     <xs:complexType name="frameAction">
