@@ -16,8 +16,15 @@
 
 package com.haulmont.cuba.gui.xml.layout.loaders;
 
+import com.haulmont.cuba.core.entity.Entity;
+import com.haulmont.cuba.core.global.AppBeans;
+import com.haulmont.cuba.core.global.LoadContext;
+import com.haulmont.cuba.core.global.Metadata;
+import com.haulmont.cuba.gui.GuiDevelopmentException;
 import com.haulmont.cuba.gui.components.CaptionMode;
 import com.haulmont.cuba.gui.components.SuggestionField;
+import com.haulmont.cuba.gui.data.DataSupplier;
+import com.haulmont.cuba.gui.data.impl.GenericDataSupplier;
 import org.apache.commons.lang.StringUtils;
 import org.dom4j.Element;
 
@@ -40,6 +47,8 @@ public class SuggestionFieldLoader extends AbstractFieldLoader<SuggestionField> 
         loadSuggestionsLimit(resultComponent, element);
 
         loadCaptionProperty(resultComponent, element);
+
+        loadQuery(resultComponent, element);
     }
 
     protected void loadCaptionProperty(SuggestionField suggestionField, Element element) {
@@ -69,5 +78,40 @@ public class SuggestionFieldLoader extends AbstractFieldLoader<SuggestionField> 
         if (StringUtils.isNotEmpty(asyncSearchDelayMs)) {
             suggestionField.setAsyncSearchDelayMs(Integer.parseInt(asyncSearchDelayMs));
         }
+    }
+
+    protected void loadQuery(SuggestionField suggestionField, Element element) {
+        Element queryElement = element.element("query");
+        if (queryElement != null) {
+            String stringQuery = queryElement.attributeValue("stringQuery");
+            if (StringUtils.isNotEmpty(stringQuery)) {
+                suggestionField.setSearchExecutor((searchString, searchParams) -> {
+                    DataSupplier supplier = new GenericDataSupplier();
+
+                    Metadata metadata = AppBeans.get(Metadata.class);
+
+                    Entity entity = metadata.create(getParameterFromQuery(stringQuery, "$"));
+
+                    //noinspection unchecked
+                    return supplier.loadList(LoadContext.create(entity.getClass()).setQuery(
+                            LoadContext.createQuery(stringQuery)
+                                    .setParameter(getParameterFromQuery(stringQuery, ":"), "%" + searchString + "%")));
+                });
+            }
+        }
+    }
+
+    protected String getParameterFromQuery(String query, String ch) {
+        String[] queryParts = query.split(" ");
+        for (String str : queryParts) {
+            if (str.contains(ch) && str.length() != 1) {
+                if (ch.equals(":")) {
+                    return str.substring(str.indexOf(":") + 1, str.length());
+                }
+                return str;
+            }
+        }
+        throw new GuiDevelopmentException(String.format("Invalid query in component '%s'", getResultComponent().getId()),
+                getContext().getFullFrameId(), "Query string: ", query);
     }
 }
