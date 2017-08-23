@@ -55,6 +55,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Consumer;
 
 public class GroupBrowser extends AbstractWindow {
 
@@ -122,11 +123,7 @@ public class GroupBrowser extends AbstractWindow {
     protected GroupPropertyCreateAction userCreateAction;
 
     public interface Companion {
-        void initDragAndDrop(Table<User> usersTable, Tree<Group> groupsTree, MoveAction moveAction);
-    }
-
-    public interface MoveAction {
-        void moveUserToGroup(User user, Group newGroup);
+        void initDragAndDrop(Table<User> usersTable, Tree<Group> groupsTree, Consumer<UserGroupChangedEvent> moveAction);
     }
 
     @Override
@@ -286,8 +283,8 @@ public class GroupBrowser extends AbstractWindow {
 
         Companion companion = getCompanion();
         if (companion != null) {
-            companion.initDragAndDrop(usersTable, groupsTree, (user, newGroup) -> {
-                userManagementService.moveUsersToGroup(Collections.singletonList(user.getId()), newGroup.getId());
+            companion.initDragAndDrop(usersTable, groupsTree, (event) -> {
+                userManagementService.moveUsersToGroup(Collections.singletonList(event.getUser().getId()), event.getGroup().getId());
                 usersTable.getDatasource().refresh();
             });
         }

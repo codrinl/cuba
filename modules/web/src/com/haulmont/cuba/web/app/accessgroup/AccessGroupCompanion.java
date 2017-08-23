@@ -18,6 +18,7 @@ package com.haulmont.cuba.web.app.accessgroup;
 
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.gui.app.security.group.browse.GroupBrowser;
+import com.haulmont.cuba.gui.app.security.group.browse.UserGroupChangedEvent;
 import com.haulmont.cuba.gui.components.Table;
 import com.haulmont.cuba.gui.components.Tree;
 import com.haulmont.cuba.security.entity.Group;
@@ -34,11 +35,12 @@ import com.vaadin.event.dd.acceptcriteria.And;
 import com.vaadin.ui.AbstractSelect;
 
 import javax.annotation.Nullable;
+import java.util.function.Consumer;
 
 public class AccessGroupCompanion implements GroupBrowser.Companion {
 
     @Override
-    public void initDragAndDrop(Table<User> usersTable, Tree<Group> groupsTree, GroupBrowser.MoveAction moveAction) {
+    public void initDragAndDrop(Table<User> usersTable, Tree<Group> groupsTree, Consumer<UserGroupChangedEvent> moveAction) {
         com.vaadin.ui.Table vTable = usersTable.unwrap(com.vaadin.ui.Table.class);
         vTable.setDragMode(com.vaadin.ui.Table.TableDragMode.ROW);
 
@@ -68,7 +70,7 @@ public class AccessGroupCompanion implements GroupBrowser.Companion {
                     return;
                 }
 
-                moveAction.moveUserToGroup(user, group);
+                moveAction.accept(new UserGroupChangedEvent(groupsTree, user, group));
             }
 
             @Override
