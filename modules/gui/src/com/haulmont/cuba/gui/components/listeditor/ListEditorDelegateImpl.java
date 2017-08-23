@@ -269,6 +269,11 @@ public class ListEditorDelegateImpl implements ListEditorDelegate {
     }
 
     @Override
+    public boolean isClearButtonVisible() {
+        return layout.getComponent("clearBtn") != null;
+    }
+
+    @Override
     public TextField getDisplayValuesField() {
         return displayValuesField;
     }
@@ -276,6 +281,7 @@ public class ListEditorDelegateImpl implements ListEditorDelegate {
     protected void addClearBtn() {
         clearBtn = componentsFactory.createComponent(Button.class);
         clearBtn.setIcon("components/pickerfield/images/clear-btn.png");
+        clearBtn.setId("clearBtn");
         clearBtn.setStyleName("c-listeditor-button");
         clearBtn.setCaption("");
         clearBtn.setAction(new BaseAction("clear")
