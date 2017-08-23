@@ -83,35 +83,40 @@ public class SuggestionFieldLoader extends AbstractFieldLoader<SuggestionField> 
     protected void loadQuery(SuggestionField suggestionField, Element element) {
         Element queryElement = element.element("query");
         if (queryElement != null) {
-            String stringQuery = queryElement.attributeValue("stringQuery");
-            if (StringUtils.isNotEmpty(stringQuery)) {
+            String stringQuery = queryElement.getStringValue();
+            String entityName = queryElement.attributeValue("entityName");
+            if (StringUtils.isNotEmpty(entityName)) {
                 suggestionField.setSearchExecutor((searchString, searchParams) -> {
                     DataSupplier supplier = new GenericDataSupplier();
 
                     Metadata metadata = AppBeans.get(Metadata.class);
-
-                    Entity entity = metadata.create(getParameterFromQuery(stringQuery, "$"));
+                    Entity entity = metadata.create(entityName);
 
                     //noinspection unchecked
                     return supplier.loadList(LoadContext.create(entity.getClass()).setQuery(
                             LoadContext.createQuery(stringQuery)
-                                    .setParameter(getParameterFromQuery(stringQuery, ":"), "%" + searchString + "%")));
+                                    .setParameter(getParameter(stringQuery), "%" + searchString + "%")));
                 });
+            } else {
+                throw new GuiDevelopmentException(String.format("Field 'entityName' is empty in component %s." +
+                        " Try to fill with example: app$EntityName", suggestionField.getId()),
+                        getContext().getFullFrameId());
             }
         }
     }
 
-    protected String getParameterFromQuery(String query, String ch) {
+    protected String getParameter(String query) {
         String[] queryParts = query.split(" ");
         for (String str : queryParts) {
-            if (str.contains(ch) && str.length() != 1) {
-                if (ch.equals(":")) {
-                    return str.substring(str.indexOf(":") + 1, str.length());
+            if (str.contains(":") && str.length() != 1) {
+                if (str.contains("\n")) {
+                    return str.substring(str.indexOf(":") + 1, str.length() - 1);
                 }
-                return str;
+                return str.substring(str.indexOf(":") + 1, str.length());
             }
         }
-        throw new GuiDevelopmentException(String.format("Invalid query in component '%s'", getResultComponent().getId()),
-                getContext().getFullFrameId(), "Query string: ", query);
+        throw new GuiDevelopmentException(String.format("Can't get parameter from query in component '%s'." +
+                " Query: \"%s\"", getResultComponent().getId(), query),
+                getContext().getFullFrameId());
     }
 }
