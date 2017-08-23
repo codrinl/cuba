@@ -121,6 +121,14 @@ public class GroupBrowser extends AbstractWindow {
     protected GroupPropertyCreateAction constraintCreateAction;
     protected GroupPropertyCreateAction userCreateAction;
 
+    public interface Companion {
+        void initDragAndDrop(Table<User> usersTable, Tree<Group> groupsTree, MoveAction moveAction);
+    }
+
+    public interface MoveAction {
+        void moveUserToGroup(User user, Group newGroup);
+    }
+
     @Override
     public void init(final Map<String, Object> params) {
         CreateAction createAction = new CreateAction(groupsTree);
@@ -275,6 +283,14 @@ public class GroupBrowser extends AbstractWindow {
                 showNotification(formatMessage("importError", e.getMessage()), NotificationType.ERROR);
             }
         });
+
+        Companion companion = getCompanion();
+        if (companion != null) {
+            companion.initDragAndDrop(usersTable, groupsTree, (user, newGroup) -> {
+                userManagementService.moveUsersToGroup(Collections.singletonList(user.getId()), newGroup.getId());
+                usersTable.getDatasource().refresh();
+            });
+        }
     }
 
     protected EntityImportView createGroupsImportView() {
