@@ -16,17 +16,23 @@
 
 package com.haulmont.cuba.gui.xml.layout.loaders;
 
+import com.haulmont.bali.util.ParamsMap;
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.AppBeans;
 import com.haulmont.cuba.core.global.LoadContext;
 import com.haulmont.cuba.core.global.Metadata;
+import com.haulmont.cuba.core.global.QueryUtils;
 import com.haulmont.cuba.gui.GuiDevelopmentException;
 import com.haulmont.cuba.gui.components.CaptionMode;
 import com.haulmont.cuba.gui.components.SuggestionField;
 import com.haulmont.cuba.gui.data.DataSupplier;
 import com.haulmont.cuba.gui.data.impl.GenericDataSupplier;
+import groovy.text.GStringTemplateEngine;
 import org.apache.commons.lang.StringUtils;
 import org.dom4j.Element;
+
+import java.io.IOException;
+import java.io.StringWriter;
 
 public class SuggestionFieldLoader extends AbstractFieldLoader<SuggestionField> {
 
@@ -83,40 +89,55 @@ public class SuggestionFieldLoader extends AbstractFieldLoader<SuggestionField> 
     protected void loadQuery(SuggestionField suggestionField, Element element) {
         Element queryElement = element.element("query");
         if (queryElement != null) {
+            final boolean escapeValue;
+
             String stringQuery = queryElement.getStringValue();
+
+            String searchFormat = queryElement.attributeValue("searchStringFormat");
+
+            String escapeValueForLike = queryElement.attributeValue("escapeValueForLike");
+            if (StringUtils.isNotEmpty(escapeValueForLike)) {
+                escapeValue = Boolean.valueOf(escapeValueForLike);
+            } else {
+                escapeValue = true;
+            }
+
             String entityName = queryElement.attributeValue("entityName");
             if (StringUtils.isNotEmpty(entityName)) {
                 suggestionField.setSearchExecutor((searchString, searchParams) -> {
                     DataSupplier supplier = new GenericDataSupplier();
-
                     Metadata metadata = AppBeans.get(Metadata.class);
-                    Entity entity = metadata.create(entityName);
 
-                    //noinspection unchecked
-                    return supplier.loadList(LoadContext.create(entity.getClass()).setQuery(
-                            LoadContext.createQuery(stringQuery)
-                                    .setParameter(getParameter(stringQuery), "%" + searchString + "%")));
+                    @SuppressWarnings("unchecked")
+                    Class<Entity> entityClass = metadata.getClassNN(entityName).getJavaClass();
+
+                    if (escapeValue) {
+                        searchString = QueryUtils.escapeForLike(searchString);
+                    }
+                    searchString = applySearchFormat(searchString, searchFormat);
+
+                    return supplier.loadList(LoadContext.create(entityClass)
+                                                        .setQuery(LoadContext.createQuery(stringQuery)
+                                                        .setParameter("searchString", searchString)));
                 });
             } else {
                 throw new GuiDevelopmentException(String.format("Field 'entityName' is empty in component %s." +
-                        " Try to fill with example: app$EntityName", suggestionField.getId()),
-                        getContext().getFullFrameId());
+                        " Try to fill with example: app$EntityName", suggestionField.getId()), getContext().getFullFrameId());
             }
         }
     }
 
-    protected String getParameter(String query) {
-        String[] queryParts = query.split(" ");
-        for (String str : queryParts) {
-            if (str.contains(":") && str.length() != 1) {
-                if (str.contains("\n")) {
-                    return str.substring(str.indexOf(":") + 1, str.length() - 1);
-                }
-                return str.substring(str.indexOf(":") + 1, str.length());
+    protected String applySearchFormat(String searchString, String format) {
+        if (StringUtils.isNotEmpty(format)) {
+            GStringTemplateEngine engine = new GStringTemplateEngine();
+            StringWriter writer = new StringWriter();
+            try {
+                engine.createTemplate(format).make(ParamsMap.of("input", searchString)).writeTo(writer);
+                return writer.toString();
+            } catch (ClassNotFoundException | IOException e) {
+                throw new IllegalStateException(e);
             }
         }
-        throw new GuiDevelopmentException(String.format("Can't get parameter from query in component '%s'." +
-                " Query: \"%s\"", getResultComponent().getId(), query),
-                getContext().getFullFrameId());
+        return searchString;
     }
 }

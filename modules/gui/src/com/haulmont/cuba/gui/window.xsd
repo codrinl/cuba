@@ -1108,6 +1108,8 @@
         <xs:simpleContent>
             <xs:extension base="xs:string">
                 <xs:attribute name="entityName" type="xs:string" use="required"/>
+                <xs:attribute name="searchStringFormat" type="xs:string" />
+                <xs:attribute name="escapeValueForLike" type="xs:boolean"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
