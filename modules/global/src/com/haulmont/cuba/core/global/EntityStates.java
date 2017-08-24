@@ -17,16 +17,14 @@
 package com.haulmont.cuba.core.global;
 
 import com.haulmont.bali.util.Preconditions;
-import com.haulmont.cuba.core.entity.AbstractNotPersistentEntity;
-import com.haulmont.cuba.core.entity.BaseEntityInternalAccess;
-import com.haulmont.cuba.core.entity.BaseGenericIdEntity;
-import com.haulmont.cuba.core.entity.SoftDelete;
+import com.haulmont.cuba.core.entity.*;
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.persistence.internal.helper.IdentityHashSet;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import java.lang.annotation.Annotation;
-import java.util.Objects;
+import java.util.Set;
 
 /**
  * Provides information about entities states.
@@ -36,7 +34,10 @@ public class EntityStates {
     public static final String NAME = "cuba_EntityStates";
 
     @Inject
-    private PersistentAttributesLoadChecker checker;
+    protected PersistentAttributesLoadChecker checker;
+
+    @Inject
+    protected ViewRepository viewRepository;
 
     /**
      * Determines whether the instance is <em>New</em>, i.e. just created and not stored in database yet.
@@ -131,19 +132,74 @@ public class EntityStates {
      * Check that entity has all specified properties loaded from DB.
      * Throw exception if property is not loaded.
      *
-     * @param entity entity
+     * @param entity     entity
      * @param properties property names
      * @throws IllegalArgumentException if at least one of properties is not loaded
      */
     public void checkLoaded(Object entity, String... properties) {
-        Objects.requireNonNull(entity);
+        Preconditions.checkNotNullArgument(entity);
 
-        for (String property: properties) {
+        for (String property : properties) {
             if (!isLoaded(entity, property)) {
                 String errorMessage = String.format("%s.%s is not loaded", entity.getClass().getSimpleName(), property);
                 throw new IllegalArgumentException(errorMessage);
             }
         }
+    }
+
+    protected void checkLoadedView(Entity entity, View view, Set<Entity> visited) {
+        Preconditions.checkNotNullArgument(entity);
+        Preconditions.checkNotNullArgument(view);
+
+        if (visited.contains(entity)) {
+            return;
+        }
+
+        visited.add(entity);
+
+        for (ViewProperty property : view.getProperties()) {
+            // todo check related attributes are loaded
+
+            if (!isLoaded(entity, property.getName())) {
+                String errorMessage = String.format("%s.%s is not loaded",
+                        entity.getClass().getSimpleName(), property.getName());
+                throw new IllegalArgumentException(errorMessage);
+            }
+
+            if (property.getView() != null) {
+                Object value = entity.getValue(property.getName());
+
+                if (value instanceof Entity) {
+                    checkLoadedView((Entity) value, property.getView(), visited);
+                }
+            }
+        }
+    }
+
+    /**
+     * Check that entity has all specified properties loaded from DB for the passed view.
+     * Throw exception if property is not loaded.
+     *
+     * @param entity entity
+     * @param view   view
+     * @throws IllegalArgumentException if at least one of properties is not loaded
+     */
+    @SuppressWarnings("unchecked")
+    public void checkLoadedView(Entity entity, View view) {
+        checkLoadedView(entity, view, new IdentityHashSet());
+    }
+
+    /**
+     * Check that entity has all specified properties loaded from DB for the passed view.
+     * Throw exception if property is not loaded.
+     *
+     * @param entity   entity
+     * @param viewName view name
+     * @throws IllegalArgumentException if at least one of properties is not loaded
+     */
+    @SuppressWarnings("unchecked")
+    public void checkLoadedView(Entity entity, String viewName) {
+        checkLoadedView(entity, viewRepository.getView(entity.getMetaClass(), viewName), new IdentityHashSet());
     }
 
     /**
