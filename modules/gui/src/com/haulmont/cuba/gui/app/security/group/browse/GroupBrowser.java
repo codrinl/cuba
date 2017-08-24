@@ -123,7 +123,7 @@ public class GroupBrowser extends AbstractWindow {
     protected GroupPropertyCreateAction userCreateAction;
 
     public interface Companion {
-        void initDragAndDrop(Table<User> usersTable, Tree<Group> groupsTree, Consumer<UserGroupChangedEvent> moveAction);
+        void initDragAndDrop(Table<User> usersTable, Tree<Group> groupsTree, Consumer<UserGroupChangedEvent> userGroupChangedHandler);
     }
 
     @Override

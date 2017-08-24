@@ -40,7 +40,7 @@ import java.util.function.Consumer;
 public class AccessGroupCompanion implements GroupBrowser.Companion {
 
     @Override
-    public void initDragAndDrop(Table<User> usersTable, Tree<Group> groupsTree, Consumer<UserGroupChangedEvent> moveAction) {
+    public void initDragAndDrop(Table<User> usersTable, Tree<Group> groupsTree, Consumer<UserGroupChangedEvent> userGroupChangedHandler) {
         com.vaadin.ui.Table vTable = usersTable.unwrap(com.vaadin.ui.Table.class);
         vTable.setDragMode(com.vaadin.ui.Table.TableDragMode.ROW);
 
@@ -70,7 +70,7 @@ public class AccessGroupCompanion implements GroupBrowser.Companion {
                     return;
                 }
 
-                moveAction.accept(new UserGroupChangedEvent(groupsTree, user, group));
+                userGroupChangedHandler.accept(new UserGroupChangedEvent(groupsTree, user, group));
             }
 
             @Override
