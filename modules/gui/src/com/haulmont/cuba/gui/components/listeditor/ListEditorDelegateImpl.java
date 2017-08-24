@@ -261,7 +261,7 @@ public class ListEditorDelegateImpl implements ListEditorDelegate {
 
     @Override
     public void setClearButtonVisible(boolean visible) {
-        if (visible && (layout.getComponent("clearBtn") == null)) {
+        if (visible && (layout.indexOf(clearBtn) == -1)) {
             addClearBtn();
         }
         if (!visible && (clearBtn != null)) {
@@ -271,7 +271,7 @@ public class ListEditorDelegateImpl implements ListEditorDelegate {
 
     @Override
     public boolean isClearButtonVisible() {
-        return layout.getComponent("clearBtn") != null;
+        return layout.indexOf(clearBtn) != -1;
     }
 
     @Override
@@ -282,7 +282,6 @@ public class ListEditorDelegateImpl implements ListEditorDelegate {
     protected void addClearBtn() {
         clearBtn = componentsFactory.createComponent(Button.class);
         clearBtn.setIcon("components/pickerfield/images/clear-btn.png");
-        clearBtn.setId("clearBtn");
         clearBtn.setStyleName("c-listeditor-button");
         clearBtn.setCaption("");
         clearBtn.setAction(new BaseAction("clear")
