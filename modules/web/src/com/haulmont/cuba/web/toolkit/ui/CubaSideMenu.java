@@ -173,6 +173,16 @@ public class CubaSideMenu extends AbstractComponent implements Component.Focusab
         }
     }
 
+    public void setCollapsibleSubMenu(boolean collapsibleSubMenu){
+        if (getState(false).collapsibleSubMenu != collapsibleSubMenu) {
+            getState().collapsibleSubMenu = collapsibleSubMenu;
+        }
+    }
+
+    public boolean isCollapsibleSubMenu(){
+        return getState(false).collapsibleSubMenu;
+    }
+
     public MenuItem getSelectedItem() {
         return selectedItem;
     }

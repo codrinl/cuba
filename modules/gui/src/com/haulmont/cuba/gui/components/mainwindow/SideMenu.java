@@ -165,6 +165,10 @@ public interface SideMenu extends Component.BelongToFrame, Component.Focusable {
      */
     boolean hasMenuItems();
 
+    void setCollapsibleSubMenu(boolean collapsibleSubMenu);
+
+    boolean isCollapsibleSubMenu();
+
     /**
      * Menu item
      */
