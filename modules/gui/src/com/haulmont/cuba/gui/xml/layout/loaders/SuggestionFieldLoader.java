@@ -99,30 +99,32 @@ public class SuggestionFieldLoader extends AbstractFieldLoader<SuggestionField> 
             if (StringUtils.isNotEmpty(escapeValueForLike)) {
                 escapeValue = Boolean.valueOf(escapeValueForLike);
             } else {
-                escapeValue = true;
+                escapeValue = false;
             }
 
-            String entityName = queryElement.attributeValue("entityName");
-            if (StringUtils.isNotEmpty(entityName)) {
+            String entityClassName = queryElement.attributeValue("entityClass");
+            if (StringUtils.isNotEmpty(entityClassName)) {
                 suggestionField.setSearchExecutor((searchString, searchParams) -> {
-                    DataSupplier supplier = new GenericDataSupplier();
-                    Metadata metadata = AppBeans.get(Metadata.class);
+                    DataSupplier supplier = resultComponent.getFrame().getDsContext().getDataSupplier();
 
-                    @SuppressWarnings("unchecked")
-                    Class<Entity> entityClass = metadata.getClassNN(entityName).getJavaClass();
+                    try {
+                        if (escapeValue) {
+                            searchString = QueryUtils.escapeForLike(searchString);
+                        }
+                        searchString = applySearchFormat(searchString, searchFormat);
 
-                    if (escapeValue) {
-                        searchString = QueryUtils.escapeForLike(searchString);
+                        Class entityClass = Class.forName(entityClassName);
+                        //noinspection unchecked
+                        return supplier.loadList(LoadContext.create(entityClass)
+                                                            .setQuery(LoadContext.createQuery(stringQuery)
+                                                            .setParameter("searchString", searchString)));
+                    } catch (ClassNotFoundException e) {
+                        throw new IllegalArgumentException(e);
                     }
-                    searchString = applySearchFormat(searchString, searchFormat);
-
-                    return supplier.loadList(LoadContext.create(entityClass)
-                                                        .setQuery(LoadContext.createQuery(stringQuery)
-                                                        .setParameter("searchString", searchString)));
                 });
             } else {
-                throw new GuiDevelopmentException(String.format("Field 'entityName' is empty in component %s." +
-                        " Try to fill with example: app$EntityName", suggestionField.getId()), getContext().getFullFrameId());
+                throw new GuiDevelopmentException(String.format("Field 'entityClass' is empty in component %s.",
+                        suggestionField.getId()), getContext().getFullFrameId());
             }
         }
     }
