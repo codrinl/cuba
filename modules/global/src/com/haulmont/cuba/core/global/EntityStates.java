@@ -16,7 +16,8 @@
 
 package com.haulmont.cuba.core.global;
 
-import com.haulmont.bali.util.Preconditions;
+import com.haulmont.chile.core.model.MetaClass;
+import com.haulmont.chile.core.model.MetaProperty;
 import com.haulmont.cuba.core.entity.*;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.persistence.internal.helper.IdentityHashSet;
@@ -24,7 +25,10 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import java.lang.annotation.Annotation;
+import java.util.Collection;
 import java.util.Set;
+
+import static com.haulmont.bali.util.Preconditions.checkNotNullArgument;
 
 /**
  * Provides information about entities states.
@@ -39,6 +43,9 @@ public class EntityStates {
     @Inject
     protected ViewRepository viewRepository;
 
+    @Inject
+    protected MetadataTools metadataTools;
+
     /**
      * Determines whether the instance is <em>New</em>, i.e. just created and not stored in database yet.
      *
@@ -50,7 +57,7 @@ public class EntityStates {
      * @throws IllegalArgumentException if entity instance is null
      */
     public boolean isNew(Object entity) {
-        Preconditions.checkNotNullArgument(entity, "entity is null");
+        checkNotNullArgument(entity, "entity is null");
         if (entity instanceof BaseGenericIdEntity) {
             return BaseEntityInternalAccess.isNew((BaseGenericIdEntity) entity);
         } else if (entity instanceof AbstractNotPersistentEntity) {
@@ -68,7 +75,7 @@ public class EntityStates {
      * @throws IllegalArgumentException if entity instance is null
      */
     public boolean isManaged(Object entity) {
-        Preconditions.checkNotNullArgument(entity, "entity is null");
+        checkNotNullArgument(entity, "entity is null");
         if (entity instanceof BaseGenericIdEntity) {
             return BaseEntityInternalAccess.isManaged((BaseGenericIdEntity) entity);
         }
@@ -85,7 +92,7 @@ public class EntityStates {
      * @throws IllegalArgumentException if entity instance is null
      */
     public boolean isDetached(Object entity) {
-        Preconditions.checkNotNullArgument(entity, "entity is null");
+        checkNotNullArgument(entity, "entity is null");
         if (entity instanceof BaseGenericIdEntity && BaseEntityInternalAccess.isDetached((BaseGenericIdEntity) entity)) {
             return true;
         }
@@ -137,7 +144,7 @@ public class EntityStates {
      * @throws IllegalArgumentException if at least one of properties is not loaded
      */
     public void checkLoaded(Object entity, String... properties) {
-        Preconditions.checkNotNullArgument(entity);
+        checkNotNullArgument(entity);
 
         for (String property : properties) {
             if (!isLoaded(entity, property)) {
@@ -148,9 +155,6 @@ public class EntityStates {
     }
 
     protected void checkLoadedView(Entity entity, View view, Set<Entity> visited) {
-        Preconditions.checkNotNullArgument(entity);
-        Preconditions.checkNotNullArgument(view);
-
         if (visited.contains(entity)) {
             return;
         }
@@ -158,7 +162,8 @@ public class EntityStates {
         visited.add(entity);
 
         for (ViewProperty property : view.getProperties()) {
-            // todo check related attributes are loaded
+            MetaClass metaClass = entity.getMetaClass();
+            MetaProperty metaProperty = metaClass.getPropertyNN(property.getName());
 
             if (!isLoaded(entity, property.getName())) {
                 String errorMessage = String.format("%s.%s is not loaded",
@@ -166,19 +171,35 @@ public class EntityStates {
                 throw new IllegalArgumentException(errorMessage);
             }
 
-            if (property.getView() != null) {
-                Object value = entity.getValue(property.getName());
+            if (metaProperty.getRange().isClass()) {
+                View propertyView = property.getView();
 
-                if (value instanceof Entity) {
-                    checkLoadedView((Entity) value, property.getView(), visited);
+                if (propertyView != null && metadataTools.isPersistent(metaProperty)) {
+                    Object value = entity.getValue(metaProperty.getName());
+
+                    if (value != null) {
+                        if (!metaProperty.getRange().getCardinality().isMany()) {
+                            checkLoadedView((Entity) value, propertyView, visited);
+                        } else {
+                            @SuppressWarnings("unchecked")
+                            Collection<Entity> collection = (Collection) value;
+
+                            for (Entity item : collection) {
+                                checkLoadedView(item, propertyView, visited);
+                            }
+                        }
+                    }
                 }
             }
         }
+
+        // after check we remove item from visited because different subtrees may have different view for one instance
+        visited.remove(entity);
     }
 
     /**
-     * Check that entity has all specified properties loaded from DB for the passed view.
-     * Throw exception if property is not loaded.
+     * Check that all properties of the view are loaded from DB for the passed entity.
+     * Throws exception if some property is not loaded.
      *
      * @param entity entity
      * @param view   view
@@ -186,12 +207,15 @@ public class EntityStates {
      */
     @SuppressWarnings("unchecked")
     public void checkLoadedView(Entity entity, View view) {
+        checkNotNullArgument(entity);
+        checkNotNullArgument(view);
+
         checkLoadedView(entity, view, new IdentityHashSet());
     }
 
     /**
-     * Check that entity has all specified properties loaded from DB for the passed view.
-     * Throw exception if property is not loaded.
+     * Check that all properties of the view are loaded from DB for the passed entity.
+     * Throws exception if some property is not loaded.
      *
      * @param entity   entity
      * @param viewName view name
@@ -199,7 +223,7 @@ public class EntityStates {
      */
     @SuppressWarnings("unchecked")
     public void checkLoadedView(Entity entity, String viewName) {
-        checkLoadedView(entity, viewRepository.getView(entity.getMetaClass(), viewName), new IdentityHashSet());
+        checkLoadedView(entity, viewRepository.getView(entity.getMetaClass(), viewName));
     }
 
     /**
@@ -211,7 +235,7 @@ public class EntityStates {
      * @throws IllegalArgumentException if entity instance is null
      */
     public boolean isDeleted(Object entity) {
-        Preconditions.checkNotNullArgument(entity, "entity is null");
+        checkNotNullArgument(entity, "entity is null");
         if (entity instanceof SoftDelete && ((SoftDelete) entity).isDeleted())
             return true;
         if (entity instanceof BaseGenericIdEntity && BaseEntityInternalAccess.isRemoved((BaseGenericIdEntity) entity)) {
@@ -233,7 +257,7 @@ public class EntityStates {
      * @see #makePatch(BaseGenericIdEntity)
      */
     public void makeDetached(BaseGenericIdEntity entity) {
-        Preconditions.checkNotNullArgument(entity, "entity is null");
+        checkNotNullArgument(entity, "entity is null");
         if (BaseEntityInternalAccess.isManaged(entity))
             throw new IllegalStateException("entity is managed");
 
@@ -256,7 +280,7 @@ public class EntityStates {
      * @see #makeDetached(BaseGenericIdEntity)
      */
     public void makePatch(BaseGenericIdEntity entity) {
-        Preconditions.checkNotNullArgument(entity, "entity is null");
+        checkNotNullArgument(entity, "entity is null");
         if (BaseEntityInternalAccess.isManaged(entity))
             throw new IllegalStateException("entity is managed");
 
