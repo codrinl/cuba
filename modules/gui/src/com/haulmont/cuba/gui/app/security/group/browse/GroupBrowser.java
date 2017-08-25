@@ -24,14 +24,12 @@ import com.haulmont.cuba.core.app.importexport.CollectionImportPolicy;
 import com.haulmont.cuba.core.app.importexport.EntityImportExportService;
 import com.haulmont.cuba.core.app.importexport.EntityImportView;
 import com.haulmont.cuba.core.app.importexport.ReferenceImportBehaviour;
+import com.haulmont.cuba.core.entity.BaseUuidEntity;
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.*;
 import com.haulmont.cuba.gui.WindowManager.OpenType;
 import com.haulmont.cuba.gui.components.*;
-import com.haulmont.cuba.gui.components.actions.CreateAction;
-import com.haulmont.cuba.gui.components.actions.EditAction;
-import com.haulmont.cuba.gui.components.actions.ItemTrackingAction;
-import com.haulmont.cuba.gui.components.actions.RemoveAction;
+import com.haulmont.cuba.gui.components.actions.*;
 import com.haulmont.cuba.gui.data.CollectionDatasource;
 import com.haulmont.cuba.gui.data.HierarchicalDatasource;
 import com.haulmont.cuba.gui.export.ByteArrayDataProvider;
@@ -56,6 +54,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class GroupBrowser extends AbstractWindow {
 
@@ -166,6 +165,7 @@ public class GroupBrowser extends AbstractWindow {
             }
         });
         usersTable.addAction(userCreateAction);
+        usersTable.setMultiSelect(true);
         Action moveToGroupAction = new ItemTrackingAction("moveToGroup")
                 .withIcon("icons/move.png")
                 .withCaption(getMessage("moveToGroup"))
@@ -284,10 +284,39 @@ public class GroupBrowser extends AbstractWindow {
         Companion companion = getCompanion();
         if (companion != null) {
             companion.initDragAndDrop(usersTable, groupsTree, (event) -> {
-                userManagementService.moveUsersToGroup(Collections.singletonList(event.getUser().getId()), event.getGroup().getId());
-                usersTable.getDatasource().refresh();
+                if (event.getUsers().size() == 1) {
+                    if (moveSelectedUsersToGroup(event)) {
+                        showNotification(formatMessage("userMovedToGroup",
+                                event.getUsers().get(0).getLogin(), event.getGroup().getName()));
+                    }
+                } else {
+                    showOptionDialog(
+                            messages.getMainMessage("dialogs.Confirmation"),
+                            formatMessage("dialogs.message", event.getGroup().getName(), event.getUsers().size()),
+                            MessageType.CONFIRMATION,
+                            new Action[]{
+                                    new DialogAction(DialogAction.Type.OK).withHandler(dialogEvent -> {
+                                        if (moveSelectedUsersToGroup(event)) {
+                                            showNotification(formatMessage("usersMovedToGroup", event.getGroup().getName()));
+                                        }
+                                    }),
+                                    new DialogAction(DialogAction.Type.CANCEL, Action.Status.PRIMARY)
+                            }
+                    );
+                }
             });
         }
+    }
+
+    protected boolean moveSelectedUsersToGroup(UserGroupChangedEvent event) {
+        List<UUID> userIds = event.getUsers().stream().map(BaseUuidEntity::getId)
+                .collect(Collectors.toList());
+
+        if (userManagementService.moveUsersToGroup(userIds, event.getGroup().getId()) != 0) {
+            usersTable.getDatasource().refresh();
+            return true;
+        }
+        return false;
     }
 
     protected EntityImportView createGroupsImportView() {

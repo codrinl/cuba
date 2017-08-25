@@ -25,7 +25,6 @@ import com.haulmont.cuba.security.entity.Group;
 import com.haulmont.cuba.security.entity.User;
 import com.haulmont.cuba.web.gui.data.ItemWrapper;
 import com.haulmont.cuba.web.toolkit.ui.CubaTree;
-import com.vaadin.data.Container;
 import com.vaadin.data.Item;
 import com.vaadin.event.DataBoundTransferable;
 import com.vaadin.event.dd.DragAndDropEvent;
@@ -33,8 +32,11 @@ import com.vaadin.event.dd.DropHandler;
 import com.vaadin.event.dd.acceptcriteria.AcceptCriterion;
 import com.vaadin.event.dd.acceptcriteria.And;
 import com.vaadin.ui.AbstractSelect;
+import com.vaadin.ui.Component;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class AccessGroupCompanion implements GroupBrowser.Companion {
@@ -42,7 +44,7 @@ public class AccessGroupCompanion implements GroupBrowser.Companion {
     @Override
     public void initDragAndDrop(Table<User> usersTable, Tree<Group> groupsTree, Consumer<UserGroupChangedEvent> userGroupChangedHandler) {
         com.vaadin.ui.Table vTable = usersTable.unwrap(com.vaadin.ui.Table.class);
-        vTable.setDragMode(com.vaadin.ui.Table.TableDragMode.ROW);
+        vTable.setDragMode(com.vaadin.ui.Table.TableDragMode.MULTIROW);
 
         CubaTree vTree = groupsTree.unwrap(CubaTree.class);
         vTree.setDragMode(com.vaadin.ui.Tree.TreeDragMode.NODE);
@@ -54,11 +56,20 @@ public class AccessGroupCompanion implements GroupBrowser.Companion {
                 AbstractSelect.AbstractSelectTargetDetails dropData =
                         ((AbstractSelect.AbstractSelectTargetDetails) dropEvent.getTargetDetails());
 
-                Object itemId = transferable.getItemId();
-                Container sourceContainer = transferable.getSourceContainer();
-                User user = convertToEntity(sourceContainer.getItem(itemId), User.class);
-                if (user == null) {
+                Component sourceComponent = transferable.getSourceComponent();
+
+                List<User> users = null;
+                if(sourceComponent instanceof com.vaadin.ui.Table){
+                    users = new ArrayList<>(usersTable.getSelected());
+                }
+
+                if(users == null){
                     return;
+                }
+
+                if(users.isEmpty()){
+                    User user = convertToEntity(vTable.getItem(transferable.getItemId()), User.class);
+                    users.add(user);
                 }
 
                 final Object targetItemId = dropData.getItemIdOver();
@@ -70,7 +81,7 @@ public class AccessGroupCompanion implements GroupBrowser.Companion {
                     return;
                 }
 
-                userGroupChangedHandler.accept(new UserGroupChangedEvent(groupsTree, user, group));
+                userGroupChangedHandler.accept(new UserGroupChangedEvent(groupsTree, users, group));
             }
 
             @Override

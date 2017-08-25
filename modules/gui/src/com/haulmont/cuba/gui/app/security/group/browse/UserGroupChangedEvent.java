@@ -21,20 +21,21 @@ import com.haulmont.cuba.security.entity.Group;
 import com.haulmont.cuba.security.entity.User;
 
 import java.util.EventObject;
+import java.util.List;
 
 public class UserGroupChangedEvent extends EventObject {
 
-    protected User user;
+    protected List<User> users;
     protected Group group;
 
-    public UserGroupChangedEvent(Tree<Group> groupTree, User user, Group group) {
+    public UserGroupChangedEvent(Tree<Group> groupTree, List<User> users, Group group) {
         super(groupTree);
-        this.user = user;
+        this.users = users;
         this.group = group;
     }
 
-    public User getUser(){
-        return user;
+    public List<User> getUsers(){
+        return users;
     }
 
     public Group getGroup() {
