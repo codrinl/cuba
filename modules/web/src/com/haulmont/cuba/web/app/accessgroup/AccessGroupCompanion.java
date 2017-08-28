@@ -59,15 +59,15 @@ public class AccessGroupCompanion implements GroupBrowser.Companion {
                 Component sourceComponent = transferable.getSourceComponent();
 
                 List<User> users = null;
-                if(sourceComponent instanceof com.vaadin.ui.Table){
+                if (sourceComponent instanceof com.vaadin.ui.Table) {
                     users = new ArrayList<>(usersTable.getSelected());
                 }
 
-                if(users == null){
+                if (users == null) {
                     return;
                 }
 
-                if(users.isEmpty()){
+                if (users.isEmpty()) {
                     User user = convertToEntity(vTable.getItem(transferable.getItemId()), User.class);
                     users.add(user);
                 }
@@ -92,7 +92,7 @@ public class AccessGroupCompanion implements GroupBrowser.Companion {
     }
 
     @Nullable
-    private <T extends Entity> T convertToEntity(@Nullable Item item, Class<T> entityClass) {
+    protected <T extends Entity> T convertToEntity(@Nullable Item item, Class<T> entityClass) {
         if (!(item instanceof ItemWrapper)) {
             return null;
         }

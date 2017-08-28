@@ -56,6 +56,8 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static com.haulmont.cuba.gui.components.DialogAction.*;
+
 public class GroupBrowser extends AbstractWindow {
 
     private final Logger log = LoggerFactory.getLogger(GroupBrowser.class);
@@ -165,7 +167,7 @@ public class GroupBrowser extends AbstractWindow {
             }
         });
         usersTable.addAction(userCreateAction);
-        usersTable.setMultiSelect(true);
+
         Action moveToGroupAction = new ItemTrackingAction("moveToGroup")
                 .withIcon("icons/move.png")
                 .withCaption(getMessage("moveToGroup"))
@@ -292,15 +294,15 @@ public class GroupBrowser extends AbstractWindow {
                 } else {
                     showOptionDialog(
                             messages.getMainMessage("dialogs.Confirmation"),
-                            formatMessage("dialogs.message", event.getGroup().getName(), event.getUsers().size()),
+                            formatMessage("dialogs.moveToGroup.message", event.getGroup().getName(), event.getUsers().size()),
                             MessageType.CONFIRMATION,
                             new Action[]{
-                                    new DialogAction(DialogAction.Type.OK).withHandler(dialogEvent -> {
+                                    new DialogAction(Type.OK).withHandler(dialogEvent -> {
                                         if (moveSelectedUsersToGroup(event)) {
                                             showNotification(formatMessage("usersMovedToGroup", event.getGroup().getName()));
                                         }
                                     }),
-                                    new DialogAction(DialogAction.Type.CANCEL, Action.Status.PRIMARY)
+                                    new DialogAction(Type.CANCEL, Action.Status.PRIMARY)
                             }
                     );
                 }
