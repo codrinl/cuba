@@ -18,13 +18,16 @@ package com.haulmont.cuba.core.global.validation;
 
 import javax.validation.Constraint;
 import javax.validation.Payload;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.*;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
+/**
+ * Annotation that can be added to service method definitions to ensure that entity instances are loaded with all the
+ * attributes specified in the view.
+ */
 @Target({FIELD, METHOD, PARAMETER, ANNOTATION_TYPE, TYPE})
 @Retention(RUNTIME)
 @Constraint(validatedBy = RequiredViewValidator.class)
@@ -35,5 +38,8 @@ public @interface RequiredView {
 
     Class<? extends Payload>[] payload() default {};
 
+    /**
+     * @return name of the required view
+     */
     String value();
 }

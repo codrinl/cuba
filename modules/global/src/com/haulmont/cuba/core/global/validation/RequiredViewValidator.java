@@ -18,15 +18,13 @@ package com.haulmont.cuba.core.global.validation;
 
 import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.PersistenceHelper;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
+import java.util.Collection;
 
-public class RequiredViewValidator implements ConstraintValidator<RequiredView, Entity> {
-
-    private final Logger log = LoggerFactory.getLogger(RequiredViewValidator.class);
+public class RequiredViewValidator implements ConstraintValidator<RequiredView, Object> {
 
     private String view;
 
@@ -36,13 +34,22 @@ public class RequiredViewValidator implements ConstraintValidator<RequiredView, 
     }
 
     @Override
-    public boolean isValid(Entity value, ConstraintValidatorContext context) {
+    public boolean isValid(Object value, ConstraintValidatorContext context) {
         try {
-            PersistenceHelper.checkLoadedView(value, view);
+            if (value instanceof Entity) {
+                PersistenceHelper.checkLoadedView((Entity) value, view);
+            } else if (value instanceof Collection) {
+                @SuppressWarnings("unchecked")
+                Collection<Entity> entities = (Collection<Entity>) value;
+                for (Entity entity : entities) {
+                    PersistenceHelper.checkLoadedView(entity, view);
+                }
+            }
 
             return true;
         } catch (IllegalArgumentException e) {
-            log.debug("Failed validation of instance with required view: {}", e.getMessage());
+            LoggerFactory.getLogger(RequiredViewValidator.class)
+                    .debug("Failed validation of instance with required view: {}", e.getMessage());
 
             return false;
         }
