@@ -51,6 +51,7 @@ public class SideMenuLoader extends AbstractComponentLoader<SideMenu> {
 
         loadCollapsibleSubMenu(resultComponent, element);
     }
+
     protected void loadMenuConfigIfNeeded(SideMenu component, Element element) {
         String loadMenuConfig = element.attributeValue("loadMenuConfig");
         if (StringUtils.isEmpty(loadMenuConfig) || Boolean.parseBoolean(loadMenuConfig)) {
@@ -89,10 +90,10 @@ public class SideMenuLoader extends AbstractComponentLoader<SideMenu> {
         }
     }
 
-    protected void loadCollapsibleSubMenu(SideMenu component, Element element){
-        String collapsibleSubMenu = element.attributeValue("collapsibleSubMenu");
-        if (StringUtils.isNotEmpty(collapsibleSubMenu)) {
-            component.setCollapsibleSubMenu(Boolean.parseBoolean(collapsibleSubMenu));
+    protected void loadCollapsibleSubMenu(SideMenu component, Element element) {
+        String singleExpandedMenu = element.attributeValue("showSingleExpandedMenu");
+        if (StringUtils.isNotEmpty(singleExpandedMenu)) {
+            component.setShowSingleExpandedMenu(Boolean.parseBoolean(singleExpandedMenu));
         }
     }
 }

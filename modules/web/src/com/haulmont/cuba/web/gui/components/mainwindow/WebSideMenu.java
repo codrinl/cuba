@@ -314,13 +314,13 @@ public class WebSideMenu extends WebAbstractComponent<CubaSideMenu> implements S
     }
 
     @Override
-    public void setCollapsibleSubMenu(boolean collapsibleSubMenu) {
-        component.setCollapsibleSubMenu(collapsibleSubMenu);
+    public void setShowSingleExpandedMenu(boolean singleExpandedMenu) {
+        component.setShowSingleExpandedMenu(singleExpandedMenu);
     }
 
     @Override
-    public boolean isCollapsibleSubMenu() {
-        return component.isCollapsibleSubMenu();
+    public boolean isShowSingleExpandedMenu() {
+        return component.isShowSingleExpandedMenu();
     }
 
     protected static class MenuItemImpl implements MenuItem {

@@ -50,7 +50,7 @@ public class CubaSideMenuWidget extends FocusableFlowPanel
     public Function<String, Icon> menuItemIconSupplier;
 
     public boolean selectOnTrigger;
-    public boolean collapsibleSubMenu;
+    public boolean singleExpandedMenu;
 
     public CubaSideMenuWidget() {
         setStylePrimaryName(CLASS_NAME);
@@ -345,7 +345,7 @@ public class CubaSideMenuWidget extends FocusableFlowPanel
             headerItemExpandHandler.accept(item.getId(), item.getSubMenu().isExpanded());
         }
 
-        if (collapsibleSubMenu && item.getSubMenu().isExpanded()) {
+        if (singleExpandedMenu && item.getSubMenu().isExpanded()) {
             List<MenuTreeNode> menuTree = buildVisibleTree(this);
             List<MenuItemWidget> menuItemWidgets = menuTreeToList(menuTree);
 

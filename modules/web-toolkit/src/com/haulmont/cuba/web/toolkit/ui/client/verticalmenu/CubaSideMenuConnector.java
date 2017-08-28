@@ -78,7 +78,7 @@ public class CubaSideMenuConnector extends AbstractComponentConnector {
 
         if (stateChangeEvent.hasPropertyChanged("selectOnTrigger")) {
             getWidget().selectOnTrigger = getState().selectOnClick;
-            getWidget().collapsibleSubMenu = getState().collapsibleSubMenu;
+            getWidget().singleExpandedMenu = getState().singleExpandedMenu;
         }
     }
 

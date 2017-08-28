@@ -25,5 +25,5 @@ public class CubaSideMenuState extends TabIndexState {
     }
 
     public boolean selectOnClick = false;
-    public boolean collapsibleSubMenu = false;
+    public boolean singleExpandedMenu = false;
 }
