@@ -17,16 +17,14 @@
 package com.haulmont.cuba.gui.xml.layout.loaders;
 
 import com.haulmont.bali.util.ParamsMap;
+import com.haulmont.bali.util.ReflectionHelper;
 import com.haulmont.cuba.core.entity.Entity;
-import com.haulmont.cuba.core.global.AppBeans;
 import com.haulmont.cuba.core.global.LoadContext;
-import com.haulmont.cuba.core.global.Metadata;
 import com.haulmont.cuba.core.global.QueryUtils;
 import com.haulmont.cuba.gui.GuiDevelopmentException;
 import com.haulmont.cuba.gui.components.CaptionMode;
 import com.haulmont.cuba.gui.components.SuggestionField;
 import com.haulmont.cuba.gui.data.DataSupplier;
-import com.haulmont.cuba.gui.data.impl.GenericDataSupplier;
 import groovy.text.GStringTemplateEngine;
 import org.apache.commons.lang.StringUtils;
 import org.dom4j.Element;
@@ -106,21 +104,15 @@ public class SuggestionFieldLoader extends AbstractFieldLoader<SuggestionField> 
             if (StringUtils.isNotEmpty(entityClassName)) {
                 suggestionField.setSearchExecutor((searchString, searchParams) -> {
                     DataSupplier supplier = resultComponent.getFrame().getDsContext().getDataSupplier();
-
-                    try {
-                        if (escapeValue) {
-                            searchString = QueryUtils.escapeForLike(searchString);
-                        }
-                        searchString = applySearchFormat(searchString, searchFormat);
-
-                        Class entityClass = Class.forName(entityClassName);
-                        //noinspection unchecked
-                        return supplier.loadList(LoadContext.create(entityClass)
-                                                            .setQuery(LoadContext.createQuery(stringQuery)
-                                                            .setParameter("searchString", searchString)));
-                    } catch (ClassNotFoundException e) {
-                        throw new IllegalArgumentException(e);
+                    Class<Entity> entityClass = ReflectionHelper.getClass(entityClassName);
+                    if (escapeValue) {
+                        searchString = QueryUtils.escapeForLike(searchString);
                     }
+                    searchString = applySearchFormat(searchString, searchFormat);
+
+                    return supplier.loadList(LoadContext.create(entityClass)
+                                                        .setQuery(LoadContext.createQuery(stringQuery)
+                                                        .setParameter("searchString", searchString)));
                 });
             } else {
                 throw new GuiDevelopmentException(String.format("Field 'entityClass' is empty in component %s.",
