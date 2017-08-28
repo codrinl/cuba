@@ -126,7 +126,7 @@ public class SuggestionFieldLoader extends AbstractFieldLoader<SuggestionField> 
             GStringTemplateEngine engine = new GStringTemplateEngine();
             StringWriter writer = new StringWriter();
             try {
-                engine.createTemplate(format).make(ParamsMap.of("input", searchString)).writeTo(writer);
+                engine.createTemplate(format).make(ParamsMap.of("searchString", searchString)).writeTo(writer);
                 return writer.toString();
             } catch (ClassNotFoundException | IOException e) {
                 throw new IllegalStateException(e);
