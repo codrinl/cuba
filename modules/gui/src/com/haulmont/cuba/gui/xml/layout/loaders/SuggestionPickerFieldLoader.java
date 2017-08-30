@@ -16,24 +16,13 @@
 
 package com.haulmont.cuba.gui.xml.layout.loaders;
 
-import com.haulmont.bali.util.ParamsMap;
-import com.haulmont.bali.util.ReflectionHelper;
-import com.haulmont.cuba.core.entity.Entity;
 import com.haulmont.cuba.core.global.AppBeans;
-import com.haulmont.cuba.core.global.LoadContext;
 import com.haulmont.cuba.core.global.Metadata;
-import com.haulmont.cuba.core.global.QueryUtils;
-import com.haulmont.cuba.gui.GuiDevelopmentException;
 import com.haulmont.cuba.gui.components.*;
-import com.haulmont.cuba.gui.data.DataSupplier;
-import groovy.text.GStringTemplateEngine;
 import org.apache.commons.lang.StringUtils;
 import org.dom4j.Element;
 
-import java.io.IOException;
-import java.io.StringWriter;
-
-public class SuggestionPickerFieldLoader extends AbstractFieldLoader<SuggestionPickerField> {
+public class SuggestionPickerFieldLoader extends SuggestionFieldQueryLoader<SuggestionPickerField> {
 
     @Override
     public void createComponent() {
@@ -109,56 +98,5 @@ public class SuggestionPickerFieldLoader extends AbstractFieldLoader<SuggestionP
         if (StringUtils.isNotEmpty(asyncSearchDelayMs)) {
             suggestionField.setAsyncSearchDelayMs(Integer.parseInt(asyncSearchDelayMs));
         }
-    }
-
-    protected void loadQuery(SuggestionPickerField suggestionField, Element element) {
-        Element queryElement = element.element("query");
-        if (queryElement != null) {
-            final boolean escapeValue;
-
-            String stringQuery = queryElement.getStringValue();
-
-            String searchFormat = queryElement.attributeValue("searchStringFormat");
-
-            String escapeValueForLike = queryElement.attributeValue("escapeValueForLike");
-            if (StringUtils.isNotEmpty(escapeValueForLike)) {
-                escapeValue = Boolean.valueOf(escapeValueForLike);
-            } else {
-                escapeValue = false;
-            }
-
-            String entityClassName = queryElement.attributeValue("entityClass");
-            if (StringUtils.isNotEmpty(entityClassName)) {
-                suggestionField.setSearchExecutor((searchString, searchParams) -> {
-                    DataSupplier supplier = resultComponent.getFrame().getDsContext().getDataSupplier();
-                    Class<Entity> entityClass = ReflectionHelper.getClass(entityClassName);
-                    if (escapeValue) {
-                        searchString = QueryUtils.escapeForLike(searchString);
-                    }
-                    searchString = applySearchFormat(searchString, searchFormat);
-
-                    return supplier.loadList(LoadContext.create(entityClass)
-                            .setQuery(LoadContext.createQuery(stringQuery)
-                                    .setParameter("searchString", searchString)));
-                });
-            } else {
-                throw new GuiDevelopmentException(String.format("Field 'entityClass' is empty in component %s.",
-                        suggestionField.getId()), getContext().getFullFrameId());
-            }
-        }
-    }
-
-    protected String applySearchFormat(String searchString, String format) {
-        if (StringUtils.isNotEmpty(format)) {
-            GStringTemplateEngine engine = new GStringTemplateEngine();
-            StringWriter writer = new StringWriter();
-            try {
-                engine.createTemplate(format).make(ParamsMap.of("searchString", searchString)).writeTo(writer);
-                return writer.toString();
-            } catch (ClassNotFoundException | IOException e) {
-                throw new IllegalStateException(e);
-            }
-        }
-        return searchString;
     }
 }
