@@ -32,12 +32,7 @@ import org.dom4j.Element;
 import java.io.IOException;
 import java.io.StringWriter;
 
-public class SuggestionFieldQueryLoader<T extends Field> extends AbstractFieldLoader<T> {
-
-    @Override
-    public void createComponent() {
-        loadQuery((SuggestionField) resultComponent, element);
-    }
+public abstract class SuggestionFieldQueryLoader<T extends Field> extends AbstractFieldLoader<T> {
 
     protected void loadQuery(SuggestionField suggestionField, Element element) {
         Element queryElement = element.element("query");
